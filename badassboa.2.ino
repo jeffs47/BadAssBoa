@@ -8,36 +8,37 @@ struct CRGB leds[NUMPIXELS];
 byte temp[NUMPIXELS];
 byte wave;
 int wave_scale = 20;
+uint8_t bright = 3;  // default brightness - 3
+// Initiate the timer variable for the "shuffle" mode.
 unsigned long currentMillis,previousMillis = 0;
+// **Variables below is related to the "fire2012" functionality.
 // COOLING: How much does the air cool as it rises?
 // Less cooling = taller flames.  More cooling = shorter flames.
 // Default 50, suggested range 20-100 
 #define COOLING  55
-
 // SPARKING: What chance (out of 255) is there that a new spark will be lit?
 // Higher chance = more roaring fire.  Lower chance = more flickery fire.
 // Default 120, suggested range 50-200.
 #define SPARKING 120
 
 void setup() {
-//Serial.begin(9600);
+//Setup the array to use APA102. Set to be wires to Trinket Pro or Arduino UNO using hardware SPI on Pins 11 and 13.
   FastLED.addLeds<APA102,11,13,GBR>(leds, NUMPIXELS);
   setup_hue_array();
-  FastLED.clear();
-  FastLED.setBrightness(3);
-  FastLED.show();
+  FastLED.clear();  //Clear the array just to be safe.
+  FastLED.setBrightness(bright); //Set the default brightness
+  FastLED.show();  //send to strip.
 }
 
 int     pixel = 0, dir = 0, tail = -10; // Index of the pixel and direction (0 = right, 1 = left)
-int     func = 0; 
+int     func = 0;  //Default function, which is solid color.
 uint32_t color = 0xFF0000;      // 'On' color (starts red)
-int     intSpeed = 10;
-int     r = 255, g = 0, b = 0;
-char    colorfam = 'red';
-uint8_t bright = 3;  //12 default
-uint8_t thishue;                                              // Starting hue value.
-uint8_t deltahue = 10;                                        // Hue change between pixels.
-int     shuffle = 0;
+int     intSpeed = 10;   //default delay value.
+int     r = 255, g = 0, b = 0;  //default values for RGB.
+char    colorfam = 'red';      //default for Rainbow code. Need to re-write. 
+uint8_t thishue;               // Starting hue value.
+uint8_t deltahue = 10;         // Hue change between pixels.
+int     shuffle = 0;          //default for shuffle to be off.
 
 
 void loop(){
@@ -82,8 +83,7 @@ void loop(){
     case 11: Fire2012(); break;
   }
 }
-
-void primaryswitcher(){
+void primaryswitcher(){  //Switch the value of the "color" variable. 
   switch (color)
         {
         case 0xFF0000: 
@@ -108,7 +108,6 @@ void changeFunction(){ // Change the function of the strip.
   dir = 0;
   FastLED.clear();
   FastLED.show();
-  //LEDS.clear();
     if (shuffle == 1){
       func = 0;
       shuffle = 0;
@@ -120,14 +119,6 @@ void changeFunction(){ // Change the function of the strip.
     else {
        ++func;
     }
-//    else if (func == 11){
-//      func = 0;
-//       ++func;
-//       currentMillis,previousMillis = 0;
-//       wave_scale = 20;
-//       setup_hue_array();
-//    }
-
 }
 void changeSpeed(){ // Change the speed of the strip. The value below is the delay in MS for the Delay() command.
   if (intSpeed < 50){
@@ -138,12 +129,8 @@ void changeSpeed(){ // Change the speed of the strip. The value below is the del
     }
 }
 void twinkleRand() {
-	// set background
-	 stripSet(0,10);
-	 // for each num
-	 //for (int i=0; i<num; i++) {
-         leds[random(NUMPIXELS)] = color;	   
-	 //}
+        stripSet(0,10);   // set background
+        leds[random(NUMPIXELS)] = color;	  
 	FastLED.show();
 	delay(intSpeed*3);
 }
@@ -153,7 +140,6 @@ void stripSet(uint32_t c, uint8_t wait) {
   for(uint16_t i=0; i<NUMPIXELS; i++) {
     leds[i] = c; 
   }
-  // move the show outside the loop
   FastLED.show();
   delay(wait);
 }
@@ -204,7 +190,7 @@ void HSVtoRGB(int hue, int sat, int val,int *colors) {
 		
 	}
 }
-void setBright(){
+void setBright(){  //Set the brightness of the boa after a key press.
   switch (bright)
     {
       case 0:
@@ -228,20 +214,17 @@ void setBright(){
       case 255:
         bright = 0; break;
     }
-      FastLED.setBrightness(bright);
-      FastLED.show();
+  FastLED.setBrightness(bright);
+  FastLED.show();
 }
 void rainbow_march() {                                        // The fill_rainbow call doesn't support brightness levels
   thishue++;                                                  // Increment the starting hue.
-  fill_rainbow(leds, NUMPIXELS, thishue, deltahue);  // Use FastLED's fill_rainbow routine.
+  fill_rainbow(leds, NUMPIXELS, thishue, deltahue);          // Use FastLED's fill_rainbow routine.
   FastLED.show();
   delay(intSpeed/7);
 } 
-void rainbow(){
+void rainbow(){                  //This is a horribly inefficient way to make the rainbow. Now that I'm using FastLED, need to switch to their simpler method
   leds[pixel] = CRGB (r,g,b);
-  //strip.setPixelColor(pixel, r,g,b);
-      
-      //delay(intSpeed); 
       switch (colorfam)
       {
         case 'red':
@@ -321,10 +304,10 @@ void rainbow(){
           break;
        }
 }
-void solidcolor(){
+void solidcolor(){      //Set all of the pixels to one simple, boring color.
   leds[pixel] = color;
         if(++pixel >= NUMPIXELS) {
-           pixel = 0; 
+          pixel = 0; 
           FastLED.show();
         }
 }
@@ -342,7 +325,6 @@ void tenright(){
         else{
           leds[101] = color; // 'On' pixel at head
         }
-        
         FastLED.show();                     // Refresh strip
         delay(intSpeed);                        // Pause 20 milliseconds (~50 FPS)      
         if(++pixel >= NUMPIXELS) {         // Increment head index.  Off end of strip?
@@ -351,7 +333,7 @@ void tenright(){
           }
           if(++tail >= NUMPIXELS) tail = 0; // Increment, reset tail index
 }
-void pov(){
+void pov(){                                //Display RGB very fast. Looks white until you move it, then you see the colors. 
    leds[pixel] = color;
         if(++pixel >= NUMPIXELS) {
           switch (color)
@@ -415,7 +397,7 @@ void tenboth(){    //***** 10 LEDs moving to the right then the left
           leds[0] = color; // 'On' pixel at head
         }
      FastLED.show();                     // Refresh strip
-      delay(intSpeed);                        // Pause 20 milliseconds (~50 FPS)      
+     delay(intSpeed);                        // Pause 20 milliseconds (~50 FPS)      
       if (dir == 1){
         if(--pixel == -12) {
           dir = 0;
@@ -438,7 +420,7 @@ void tenboth(){    //***** 10 LEDs moving to the right then the left
 void colorleftright(){   //**** Color Wheel from left then right.
    leds[pixel] = color;
     FastLED.show();                     // Refresh strip
-    delay(intSpeed);                        // Pause 20 milliseconds (~50 FPS)
+    delay(intSpeed);                        // Pause 
     if (dir == 1){
       if(--pixel == 0) {
         dir = 0;
@@ -455,7 +437,7 @@ void colorleftright(){   //**** Color Wheel from left then right.
 void colorleft(){  //***** Color Wheel from the left.
    leds[pixel] = color;
     FastLED.show();                     // Refresh strip
-    delay(intSpeed);                        // Pause 20 milliseconds (~50 FPS)
+    delay(intSpeed);                        // Pause
     if(++pixel >= NUMPIXELS) {         // Increment head index.  Off end of strip?
       pixel = 0;                       //  Yes, reset head index to start
       primaryswitcher();
@@ -463,16 +445,13 @@ void colorleft(){  //***** Color Wheel from the left.
 }
 void setup_hue_array(){
   static byte x, hue = 0;
-  
   //only assign data for half the led strip
   for(byte i = 0; i < ((NUMPIXELS/2)+ 1); i++){
-    
     //for every 5 leds, increase the hue by 20
     if(x++ == 5){
       hue += 20;
       x = 0;   
     }
-    
     //assign the hue for later use in the temp[] array
     temp[i] = hue;
   }
@@ -537,7 +516,7 @@ void Fire2012()
 
 void ChangeMe() {                                             // A time (rather than loop) based demo sequencer. This gives us full control over the length of each sequence.
   uint8_t secondHand = (millis() / 1000) % 60;                // Change '60' to a different value to change length of the loop.
-  static uint8_t lastSecond = 999999;                          // Static variable, means it's only defined once. This is our 'debounce' variable.
+  static uint8_t lastSecond = 99;                          // Static variable, means it's only defined once. This is our 'debounce' variable.
   if (lastSecond != secondHand) {                             // Debounce to make sure we're not repeating an assignment.
     lastSecond = secondHand;
     if (secondHand ==  0)  {func = 2;}
